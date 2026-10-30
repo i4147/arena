@@ -2,8 +2,8 @@
 
 These are the throwaway scripts from the consolidation session, kept because they
 are the evidence: each one re-runs a check whose result is claimed in `PLAN.md`.
-Nothing here is needed to *use* the tools in `g001/` … `rmc/`. Nothing here is
-imported by them.
+Nothing here is needed to *use* the eleven tools that sit in the repository root
+next to this folder. Nothing here is imported by them.
 
 ```bash
 arena/setup_venv.sh            # rebuild .venv (pymupdf pypdf libcst tree-sitter pyflakes)
@@ -23,9 +23,9 @@ arena/parity_g006.py           # tree-sitter output == libcst output, byte for b
 | `verify_tools.sh` | runs `pyflakes`, `--help` and the tool's own `doctor` on all 11 files | the bar after every edit was "pyflakes clean, help works, engine probe honest" |
 | `make_pdf_fixtures.py` | writes `doc1.pdf` (3 pages), `doc2.pdf` (2), `big.pdf` (100.1 MiB), `SUMMARY.md`, `print.html` | every PDF claim was made against these five files; `big.pdf` is a real PDF with a 100 MiB incompressible attachment so the size guard has something to trip on |
 | `make_dh_stubs.py` | builds three importable `dh` packages: current, old 7-kwarg, `**kwargs` | `dh` is private and absent here; `rmc_ts.py` filters kwargs by signature, so all three shapes have to be exercised |
-| `dh_stub.py` | the stand-in `dh` itself: `SKIP_DIRS`, `TSStripper(**kwargs).strip(src)`, `atomic_write` on the real tree-sitter grammar | lets `rmc/rmc_ts.py` and `legacy/rmc/rmc_termux.py` run end-to-end without your module |
+| `dh_stub.py` | the stand-in `dh` itself: `SKIP_DIRS`, `TSStripper(**kwargs).strip(src)`, `atomic_write` on the real tree-sitter grammar | lets `rmc_ts.py` and your `rmc_termux.py` run end-to-end without your module |
 | `smoke_pdftool.sh` | every subcommand of one pdftool build, with expected exit codes and artifact checks | the manual sweep, turned into something repeatable |
-| `smoke_rmc.sh` | dry-run purity, `--check` gate, `-j 1` == `-j 8`, idempotence, `--backup`, all three `dh` signatures, 96-file timing | same |
+| `smoke_rmc.sh` | dry-run purity, `--check` gate, `-j 1` == `-j 8`, idempotence, `--backup`, all three `dh` signatures, 88-file parallel timing | same |
 | `sync_branch.sh` | saves uncommitted work, `git reset --hard` to the remote tip, restores the work, prints what is dirty | `.git/` reverted to the initial commit between turns; the branch tip lived only on the remote |
 | `patches/pdftool_limits.diff` | the `--max-size` / `--max-pages` change on its own | reviewable in isolation from the 7,000-line consolidation |
 | `patches/plan_variants.diff` | the `PLAN.md` §9 change on its own | same |
@@ -54,16 +54,16 @@ PYTHONPATH=$HOME/lib arena/smoke_rmc.sh
 
 Both were found *by* these scripts, after the tools had already been signed off:
 
-1. **`g006/annotations.py`** — `x: str  # note` came out of the tree-sitter
+1. **`annotations.py`** — `x: str  # note` came out of the tree-sitter
    backend as `x# note`: the span trimmer ate the spaces in front of the comment.
    `_ts_span()` no longer trims trailing whitespace (the spaces belong to the
-   line, not to the annotation). Parity is now 104/104 across every parseable
-   Python file in the repo — all 11 tools plus 93 of the 96 `legacy/` originals
-   (the other three never parsed on 3.11) — not just the original five fixtures.
-2. **`rmc/rmc_ts.py`** — it was passing a `strip_all` kwarg that no `dh` revision
+   line, not to the annotation). Parity held on 104/104 files while the 96
+   originals were still in the tree (11 tools + 93 legacy files; three never
+   parsed on 3.11), and on all five fixtures since they were removed.
+2. **`rmc_ts.py`** — it was passing a `strip_all` kwarg that no `dh` revision
    ever documented, and silently ignoring `--remove-blank-lines` when the
    installed `TSStripper` had no such kwarg. It now passes only the seven knobs
-   `legacy/rmc/rmc_termux.py` sets, and collapses blank lines itself (with an AST
+   your `rmc_termux.py` sets, and collapses blank lines itself (with an AST
    equality guard) when the module cannot.
 
 ## Known limit, deliberately not papered over

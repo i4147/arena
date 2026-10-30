@@ -21,7 +21,7 @@ path the script says so and exits 2 instead of half-working.
     rmc_ts.py src/ --check               # CI: exit 1 if anything would change
     rmc_ts.py src/ -a --remove-blank-lines
 
-What it will not do: annotations, libcst, regex, unparse.  That is `rmc/rmc.py`.
+What it will not do: annotations, libcst, regex, unparse.  That is `rmc.py`.
 
 Exit codes: 0 ok · 1 errors / --check found work · 2 usage or dh missing · 130 interrupted
 """
@@ -81,7 +81,7 @@ def build_stripper(config: tuple) -> object:
     if TSStripper is None:
         raise RuntimeError(f"cannot import TSStripper from dh ({_DH_IMPORT_ERROR})")
     strip_comments, strip_docstrings, strip_all, blank_lines = config
-    # Exactly the knobs `legacy/rmc/rmc_termux.py` sets on your stripper, no more:
+    # Exactly the knobs your rmc_termux.py sets on the stripper, no more:
     # inventing a kwarg here is how you get a TypeError from a dh we have not seen.
     wanted = {
         "strip_comments": strip_comments or strip_all,

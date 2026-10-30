@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# arena/smoke_rmc.sh — the sweep that proved rmc/rmc_ts.py against `dh`.
+# arena/smoke_rmc.sh — the sweep that proved rmc_ts.py against `dh`.
 #
 # `dh` is not in this repo, so the script uses the real module when one is
 # importable and otherwise builds the stand-in from arena/dh_stub.py (and its two
@@ -7,7 +7,7 @@
 #
 #   arena/smoke_rmc.sh                 # stub unless `dh` is importable
 #   PYTHONPATH=~/lib arena/smoke_rmc.sh    # your real dh
-#   arena/smoke_rmc.sh --no-batch      # skip the 96-file legacy timing run
+#   arena/smoke_rmc.sh --no-batch      # skip the 88-file parallel timing run
 #
 # Checks, in order: --help works with no dh at all; a missing dh exits 2; dry-run
 # writes nothing; --check exits 1 before and 0 after; -j 1 and -j 8 are
@@ -21,8 +21,8 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-TOOL="$ROOT/rmc/rmc_ts.py"
-TOOL2="$ROOT/rmc/rmc.py"
+TOOL="$ROOT/rmc_ts.py"
+TOOL2="$ROOT/rmc.py"
 BATCH=1
 ALSO_VARIANTS=1
 
@@ -199,35 +199,46 @@ if [ "$ALSO_VARIANTS" -eq 1 ] && [ -n "$DH_HOME" ]; then
     fi
 fi
 
-# ---- 9. the 96 legacy files, timed ---------------------------------------- #
+# ---- 9. a batch big enough to measure, timed ------------------------------ #
+# The 96-file legacy corpus is gone, so the batch is the repo's own tools copied
+# eight times: ~88 real files, which is enough to see the pool work and to prove
+# serial and parallel agree.
 if [ "$BATCH" -eq 1 ]; then
-    rm -rf "$WORK/legacy"; cp -r "$ROOT/legacy" "$WORK/legacy"
+    build_corpus() {
+        local dest="$1"; rm -rf "$dest"; mkdir -p "$dest"
+        for round in 1 2 3 4 5 6 7 8; do
+            for f in "$ROOT"/*.py; do
+                [ -f "$f" ] || continue
+                cp "$f" "$dest/$(basename "$f" .py)_r$round.py"
+            done
+        done
+    }
+    build_corpus "$WORK/corpus1"; build_corpus "$WORK/corpus2"
+    n=$(find "$WORK/corpus1" -name '*.py' | wc -l | tr -d ' ')
     t0=$(date +%s%N)
-    "${DH_ENV[@]}" "$PY" "$TOOL" "$WORK/legacy" -j 1 -q >/dev/null 2>&1; rc1=$?
+    "${DH_ENV[@]}" "$PY" "$TOOL" "$WORK/corpus1" -j 1 -q >/dev/null 2>&1; rc1=$?
     t1=$(date +%s%N)
-    rm -rf "$WORK/legacy2"; cp -r "$ROOT/legacy" "$WORK/legacy2"
-    "${DH_ENV[@]}" "$PY" "$TOOL" "$WORK/legacy2" -j 8 -q >/dev/null 2>&1; rc8=$?
+    "${DH_ENV[@]}" "$PY" "$TOOL" "$WORK/corpus2" -j 8 -q >/dev/null 2>&1; rc8=$?
     t2=$(date +%s%N)
     serial=$(( (t1 - t0) / 1000000 )); parallel=$(( (t2 - t1) / 1000000 ))
-    n=$(find "$ROOT/legacy" -name '*.py' | wc -l | tr -d ' ')
     if [ "$rc1" -eq 0 ] && [ "$rc8" -eq 0 ]; then
-        ok "$n legacy files: -j 1 ${serial} ms · -j 8 ${parallel} ms (both exit 0)"
+        ok "$n files: -j 1 ${serial} ms · -j 8 ${parallel} ms (both exit 0)"
     else
-        bad "legacy batch: -j 1 exit $rc1, -j 8 exit $rc8"
+        bad "batch: -j 1 exit $rc1, -j 8 exit $rc8"
     fi
-    diff -r "$WORK/legacy" "$WORK/legacy2" >/dev/null \
-        && ok "legacy batch: serial and parallel identical" || bad "legacy batch: serial != parallel"
+    diff -r "$WORK/corpus1" "$WORK/corpus2" >/dev/null \
+        && ok "batch: serial and parallel identical" || bad "batch: serial != parallel"
 fi
 
 # ---- 10. parity with the full rmc.py (informational) ---------------------- #
 if [ -f "$TOOL2" ]; then
-    cp "$ROOT/g004/extract.py" "$WORK/parity_a.py"; cp "$ROOT/g004/extract.py" "$WORK/parity_b.py"
+    cp "$ROOT/extract.py" "$WORK/parity_a.py"; cp "$ROOT/extract.py" "$WORK/parity_b.py"
     "$PY" "$TOOL2" strip "$WORK/parity_a.py" -c -d -b tree-sitter -q >/dev/null 2>&1
     "${DH_ENV[@]}" "$PY" "$TOOL" "$WORK/parity_b.py" -q >/dev/null 2>&1
     if cmp -s "$WORK/parity_a.py" "$WORK/parity_b.py"; then
-        ok "rmc.py (tree-sitter) and rmc_ts.py agree on g004/extract.py"
+        ok "rmc.py (tree-sitter) and rmc_ts.py agree on extract.py"
     else
-        echo "  note  rmc.py and rmc_ts.py differ on g004/extract.py — expected: dh has its own policies"
+        echo "  note  rmc.py and rmc_ts.py differ on extract.py — expected: dh has its own policies"
     fi
 fi
 

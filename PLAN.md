@@ -1,23 +1,33 @@
 # Consolidation Plan — 96 scripts → 9 files
 
-**Status:** approved · implemented · validated · originals archived under `legacy/`
+**Status:** approved · implemented · validated · originals **removed**, repo flattened
 **Python floor:** 3.10 · **third-party deps:** all optional, every tool has a `doctor`
+
+> **Final layout (what the repo looks like now).** The nine tools — plus the two
+> single-dependency variants — sit at the repository root, one file each, with no
+> subdirectories: `comments.py pdftool.py pdftool_fitz.py pydup.py extract.py
+> codecs.py archive.py annotations.py rmc.py deadcode.py rmc_ts.py`. The 96
+> originals that used to live under `g001/` … `g006/` and `rmc/` were archived
+> under `legacy/` and then **deleted at your request** — they are all still in
+> git history at commit `16208c1` if you ever want one back. Everything below
+> that says `g001/…`, `g002/…`, `g005/…`, `rmc/…` refers to *where a file used to
+> live*, not to a directory that exists today.
 
 ---
 
 ## 0. TL;DR
 
-| dir | theme (as actually implemented) | scripts | → | consolidated file | lines |
+| group (dir removed) | theme (as actually implemented) | scripts | → | file, now at root | lines |
 |---|---|---|---|---|---|
-| `g001` | strip comments from source code, 22 languages | 19 | → | `g001/comments.py` | **1,414** ✅ |
-| `g002` | read / render / restructure PDFs | 12 | → | `g002/pdftool.py` | **1,240** ✅ |
-| `g003` | find duplicate & near-duplicate Python files | 2 | → | `g003/pydup.py` | **3,024** ✅ |
-| `g004` | extract artifacts (classes, funcs, docstrings, imports, constants) | 6 | → | `g004/extract.py` | **563** ✅ |
-| `g005` | compress single streams / archive containers / benchmark | 24 | → | `g005/codecs.py` + `g005/archive.py` | **1,238 + 1,426** ✅ |
-| `g006` | add **or** remove type annotations | 4 | → | `g006/annotations.py` | **1,034** ✅ |
-| `rmc` | strip comments/docstrings/annotations **and** dead code from Python | 29 | → | `rmc/rmc.py` + `rmc/deadcode.py` | **1,293 + 614** ✅ |
-| `g002` | *variant:* same PDF jobs, **PyMuPDF only** (no fallback engines) | — | → | `g002/pdftool_fitz.py` | **981** ✅ |
-| `rmc` | *variant:* same stripping, **`dh.TSStripper` only** + `ProcessPoolExecutor` | — | → | `rmc/rmc_ts.py` | **470** ✅ |
+| `g001` | strip comments from source code, 22 languages | 19 | → | `comments.py` | **1,414** ✅ |
+| `g002` | read / render / restructure PDFs | 12 | → | `pdftool.py` | **1,240** ✅ |
+| `g003` | find duplicate & near-duplicate Python files | 2 | → | `pydup.py` | **3,024** ✅ |
+| `g004` | extract artifacts (classes, funcs, docstrings, imports, constants) | 6 | → | `extract.py` | **563** ✅ |
+| `g005` | compress single streams / archive containers / benchmark | 24 | → | `codecs.py` + `archive.py` | **1,238 + 1,426** ✅ |
+| `g006` | add **or** remove type annotations | 4 | → | `annotations.py` | **1,034** ✅ |
+| `rmc` | strip comments/docstrings/annotations **and** dead code from Python | 29 | → | `rmc.py` + `deadcode.py` | **1,293 + 614** ✅ |
+| `g002` | *variant:* same PDF jobs, **PyMuPDF only** (no fallback engines) | — | → | `pdftool_fitz.py` | **981** ✅ |
+| `rmc` | *variant:* same stripping, **`dh.TSStripper` only** + `ProcessPoolExecutor` | — | → | `rmc_ts.py` | **470** ✅ |
 | `sim` | only `01.sh` (a 6-line `pwd; ls; git status` scratch file) | 0 py | — | skipped, per your instruction | — |
 
 **45,266 → 11,846 lines (−73.8%), 96 files → 9.** The two `variant` rows are
@@ -28,8 +38,9 @@ Two folders are two tools each, on your call (§7): `g005` splits *streams* from
 *containers* (`codecs.py` / `archive.py`), and `rmc` splits *comment stripping*
 from *dead-code removal* (`rmc.py` / `deadcode.py`).
 
-All 96 originals were moved with `git mv` into `legacy/<dir>/` — nothing was
-deleted, so every behaviour can still be diffed against its replacement.
+The originals were first moved with `git mv` into `legacy/<dir>/` so every
+behaviour could be diffed against its replacement, and were deleted once that
+checking was done (see the banner above; commit `16208c1` has them).
 
 ---
 
@@ -131,7 +142,7 @@ Original flag spellings stay as `argparse` aliases where they don't collide (e.g
 
 ## 3. Per-directory design
 
-### 3.1 `g001` → `g001/comments.py` — **reference implementation written**
+### 3.1 `g001` → `comments.py` — **reference implementation written**
 
 **Job:** remove comments from source files; 22 languages; preserve the ones that change behaviour (shebang, `# type:`, `# noqa`, `eslint-disable`, `@license`, `SPDX`, `//go:`, `# shellcheck`, Rust `SAFETY:` …).
 
@@ -167,7 +178,7 @@ Coverage vs. the 19 originals:
 
 ---
 
-### 3.2 `g002` → `g002/pdftool.py`
+### 3.2 `g002` → `pdftool.py`
 
 **Job:** everything PDF. The folder is really 4 tools wearing 12 names.
 
@@ -219,7 +230,7 @@ merges the rest instead of silently dropping pages.
 
 ---
 
-### 3.3 `g003` → `g003/pydup.py`
+### 3.3 `g003` → `pydup.py`
 
 **Job:** find duplicate / near-duplicate Python modules. Already a single argparse program with 40 flags; it just exists twice.
 
@@ -234,7 +245,7 @@ No flag is removed. This is the cheapest folder: ~150 lines of dead code and one
 
 ---
 
-### 3.4 `g004` → `g004/extract.py`
+### 3.4 `g004` → `extract.py`
 
 **Job:** walk a Python tree, pull one *kind* of declaration out of every file, and dump it into `output/<subfolder>/<kind>.py`, so you can read "all my classes" in one place.
 
@@ -259,7 +270,7 @@ extract.py {classes,functions,imports,comments,docstrings,constants,all} [PATH�
 
 ---
 
-### 3.5 `g005` → `g005/codecs.py` + `g005/archive.py`
+### 3.5 `g005` → `codecs.py` + `archive.py`
 
 **Job:** compress, archive, decompress, pick the best codec, and audit an archive tree. 24 scripts, 13.7 k lines.
 
@@ -348,7 +359,7 @@ magic table still *names* them in `inspect`, it just does not claim to open them
 
 ---
 
-### 3.6 `g006` → `g006/annotations.py`
+### 3.6 `g006` → `annotations.py`
 
 **Job:** put type annotations **on**, or take them **off**, across a Python tree.
 
@@ -371,7 +382,7 @@ annotations.py doctor
 
 ---
 
-### 3.7 `rmc` → `rmc/rmc.py`
+### 3.7 `rmc` → `rmc.py`
 
 **Job:** the Python-only superset of g001 — strip comments **and** docstrings **and** type annotations from `.py`, with several engines and heavy safety machinery. 29 scripts, 15.4 k lines, ~30 different flag spellings.
 
@@ -420,7 +431,7 @@ deadcode.py doctor
 
 | file | why | replaced by |
 |---|---|---|
-| `g003/python_duplicate_finder.py` | strict subset of `pydup.py` (620-line diff, all additive) | `g003/pydup.py` |
+| `g003/python_duplicate_finder.py` | strict subset of `pydup.py` (620-line diff, all additive) | `pydup.py` |
 | `g005/archive_merger.py` | primitive duplicate of `archive_dir.py` | `archive.py pack --per-subdir --merge` |
 | `g005/compression_benchmark.py`, `smart_archiver.py` benchmark | 3rd copy of the same bench | `codecs.py bench` |
 | `g002/pdf2page.py`, `pdf2text.py`, `pdftotext.py` | engines folded into one registry | `pdftool.py text -e …` |
@@ -431,9 +442,10 @@ deadcode.py doctor
 | `rmc/cleants*.py`, `srmc1.py` | same engine, fewer flags | `rmc.py strip` |
 | `g006/clean_type_annotations.py` | does not parse (line 153) | `annotations.py remove` |
 
-Every dropped file still exists under `legacy/`; nothing was deleted. Everything
-not listed keeps its *behaviour* as a flag or subcommand, with the old name in
-the `--help` epilogue (`was: …`).
+Every dropped file is still recoverable (`git show 16208c1:legacy/<dir>/<file>`),
+though it is no longer in the working tree. Everything not listed keeps its
+*behaviour* as a flag or subcommand, with the old name in the `--help` epilogue
+(`was: …`).
 
 ---
 
@@ -474,11 +486,11 @@ python.
 
 | # | question | your answer | where it landed |
 |---|---|---|---|
-| 1 | `rmc/pycleaner.py` — drop, fold in, or separate? | **separate** | `rmc/deadcode.py` (614 lines) |
-| 2 | old files — delete or keep? | **move to `legacy/`** | 96 files `git mv`'d into `legacy/<dir>/` |
+| 1 | `rmc/pycleaner.py` — drop, fold in, or separate? | **separate** | `deadcode.py` (614 lines) |
+| 2 | old files — delete or keep? | **move to `legacy/`, later delete** | archived in `legacy/<dir>/` first, then removed once the diffs were done |
 | 3 | Python floor | **3.10** | `from __future__ import annotations` everywhere, no PEP 695, no `match`-only tricks |
 | 4 | exotic flags — trim or keep? | **keep, full superset** (`--sync-titles` named explicitly) | `pdftool.py outline --sync-titles/--check-titles`, `rmc.py --preserve-lines/--eat-trailing-newline`, … |
-| 5 | `g005` — one file or two? | **split** | `g005/codecs.py` + `g005/archive.py` |
+| 5 | `g005` — one file or two? | **split** | `codecs.py` + `archive.py` |
 
 Consequence of #4: the CLIs are wide. Every flag that had a job in the originals
 still has one; nothing was trimmed to make the help text shorter.
@@ -489,17 +501,17 @@ still has one; nothing was trimmed to make the help text shorter.
 
 | file | lines | subcommands | validated against |
 |---|---|---|---|
-| `g001/comments.py` | 1,414 | (one operation) `-b tree-sitter\|regex\|libcst\|minify` | 9-file / 8-language fixture, backend parity, idempotence, `-j 8` == serial, token gate |
-| `g002/pdftool.py` | 1,240 | `text image view merge split extract shrink check outline info doctor` | generated PDFs, pymupdf **and** pypdf-only paths, `--sync-titles` alignment, 100 MiB / `--max-pages` skips, page-range errors, dry-run purity |
-| `g003/pydup.py` | 3,024 | one scanner + `--doctor` | fixture tree, `text/json/ndjson/csv`, dry-run removal plan, exit codes |
-| `g004/extract.py` | 563 | (one operation) `--kinds` | 12 outputs on a fixture tree, `--dedupe content`, `--nested --header`, syntax-error → exit 1 |
-| `g005/codecs.py` | 1,238 | `compress decompress bench inspect doctor` | 9 codecs × round-trip hash, framed blocks, `--verify`, dry-run, duplicate-target guard |
-| `g005/archive.py` | 1,426 | `pack unpack list info check split remove merge convert fix bench doctor` | 13 formats round-trip, zip-slip refusal, `--per-subdir --merge`, 7z member filter |
-| `g006/annotations.py` | 1,034 | `add remove check doctor` | heuristic adds, stub adds, 3 remove backends (`tree-sitter` == `libcst` byte-identical on 104 files), type comments, gate rejections |
-| `rmc/rmc.py` | 1,293 | `strip check bench doctor` | engine parity matrix (`-d`/`-t` identical across 3 engines), idempotence, verify() rejection |
-| `rmc/deadcode.py` | 614 | `imports unused block doctor` | grouped findings, `--apply` rewrites, `--check exit 1`, per-file compile gate |
-| `g002/pdftool_fitz.py` | 981 | same eleven as `pdftool.py` | all subcommands on generated PDFs, `shrink -l 1/2/3`, simulated missing-PyMuPDF → exit 2 |
-| `rmc/rmc_ts.py` | 470 | `(strip) doctor-less, --check/--json` | 3 `dh` signature variants, `-j 1` == `-j 8`, idempotence, compile gate, 96-file batch |
+| `comments.py` | 1,414 | (one operation) `-b tree-sitter\|regex\|libcst\|minify` | 9-file / 8-language fixture, backend parity, idempotence, `-j 8` == serial, token gate |
+| `pdftool.py` | 1,240 | `text image view merge split extract shrink check outline info doctor` | generated PDFs, pymupdf **and** pypdf-only paths, `--sync-titles` alignment, 100 MiB / `--max-pages` skips, page-range errors, dry-run purity |
+| `pydup.py` | 3,024 | one scanner + `--doctor` | fixture tree, `text/json/ndjson/csv`, dry-run removal plan, exit codes |
+| `extract.py` | 563 | (one operation) `--kinds` | 12 outputs on a fixture tree, `--dedupe content`, `--nested --header`, syntax-error → exit 1 |
+| `codecs.py` | 1,238 | `compress decompress bench inspect doctor` | 9 codecs × round-trip hash, framed blocks, `--verify`, dry-run, duplicate-target guard |
+| `archive.py` | 1,426 | `pack unpack list info check split remove merge convert fix bench doctor` | 13 formats round-trip, zip-slip refusal, `--per-subdir --merge`, 7z member filter |
+| `annotations.py` | 1,034 | `add remove check doctor` | heuristic adds, stub adds, 3 remove backends (`tree-sitter` == `libcst` byte-identical on 104 files), type comments, gate rejections |
+| `rmc.py` | 1,293 | `strip check bench doctor` | engine parity matrix (`-d`/`-t` identical across 3 engines), idempotence, verify() rejection |
+| `deadcode.py` | 614 | `imports unused block doctor` | grouped findings, `--apply` rewrites, `--check exit 1`, per-file compile gate |
+| `pdftool_fitz.py` | 981 | same eleven as `pdftool.py` | all subcommands on generated PDFs, `shrink -l 1/2/3`, simulated missing-PyMuPDF → exit 2 |
+| `rmc_ts.py` | 470 | `(strip) doctor-less, --check/--json` | 3 `dh` signature variants, `-j 1` == `-j 8`, idempotence, compile gate, 96-file batch |
 
 **How "the goals still hold" was checked, per file** — the same six checks every
 time, on fixtures in `/tmp`:
@@ -530,7 +542,7 @@ Both were requested after the consolidation landed. Neither replaces the
 consolidated tool; each is a strict, smaller build that removes a whole class of
 "which backend is this using?" questions.
 
-### 9.1 `g002/pdftool_fitz.py` — PyMuPDF only · 981 lines
+### 9.1 `pdftool_fitz.py` — PyMuPDF only · 981 lines
 
 Same eleven subcommands (`text image view merge split extract shrink check outline
 info doctor`), same guard rails (`--max-size`, `--no-max-size`, `--max-pages`,
@@ -557,9 +569,9 @@ bytes), `view` without a tty, `outline --summary/--html/--sync-titles`
 (`info` still reports it), bad page range → exit 2, and a simulated
 `pymupdf`-missing import → `doctor` exit 2.
 
-### 9.2 `rmc/rmc_ts.py` — `dh.TSStripper` only · 470 lines
+### 9.2 `rmc_ts.py` — `dh.TSStripper` only · 470 lines
 
-The simple version of `rmc/rmc.py`. It imports your module and trusts it:
+The simple version of `rmc.py`. It imports your module and trusts it:
 
 ```python
 from dh import TSStripper
@@ -575,7 +587,7 @@ makes an in-place rewriter safe, and the parallel loop:
   cached; `-j N` defaults to `min(8, cpu_count)`, and `-j 1` runs in-process so
   a single file does not pay for a fork.
 * **Kwargs are filtered to what your `dh` actually declares** — exactly the seven
-  knobs `legacy/rmc/rmc_termux.py` sets: `strip_comments`, `strip_docstrings`,
+  knobs your `rmc_termux.py` sets: `strip_comments`, `strip_docstrings`,
   `preserve_shebangs`, `preserve_module_docstring`, `preserve_directives`,
   `preserve_commented_code`, `validate`. Nothing is invented; an unknown kwarg is
   how you get a `TypeError` from a `dh` revision nobody has seen. If the
@@ -603,8 +615,9 @@ than silently doing something else; the import is at module scope but guarded, s
 pending work and 0 after, `--diff`/`-n` write nothing, `--backup` keeps the
 original, `--remove-blank-lines` collapses locally when dh lacks the kwarg,
 `node_modules/.venv` are skipped, `--json` parses, `--help` works with no `dh` at
-all while a real run without it exits 2, and 96 legacy files run in 0.51 s at
-`-j 8` vs 0.81 s at `-j 1`. Three signature variants of `dh` (current, the
+all while a real run without it exits 2, and an 88-file batch (every tool copied
+eight times, since the legacy corpus is gone) runs in 1.79 s at `-j 8` vs 3.23 s
+at `-j 1`, with byte-identical results either way. Three signature variants of `dh` (current, the
 seven-kwarg legacy shape, `**kwargs`) were each driven end-to-end.
 
 ## 10. The helper scripts, kept in `arena/`
@@ -627,22 +640,23 @@ rather than believed. `arena/README.md` documents each file; the short version:
 Two real defects came out of writing these down, both after the tools had been
 signed off:
 
-1. `g006/annotations.py` turned `x: str  # note` into `x# note` — `_ts_span()`
+1. `annotations.py` turned `x: str  # note` into `x# note` — `_ts_span()`
    trimmed trailing whitespace that belongs to the line, not to the annotation.
    Fixed (1,036 → 1,034 lines), and the parity check that missed it now runs
    against every file in the repo.
-2. `rmc/rmc_ts.py` passed a `strip_all` kwarg no `dh` revision documents, and
+2. `rmc_ts.py` passed a `strip_all` kwarg no `dh` revision documents, and
    ignored `--remove-blank-lines` on signatures that lack it. Both fixed as
    described in §9.2.
 
 ### Layout
 
 ```
-g001/comments.py       g002/pdftool.py      g003/pydup.py      g004/extract.py
-g005/codecs.py         g005/archive.py     g006/annotations.py
-rmc/rmc.py             rmc/deadcode.py      rmc/rmc_ts.py      # dh-only variant
-g002/pdftool_fitz.py                        # PyMuPDF-only variant
-arena/                                      # the test harness (README.md inside)
-legacy/g001 … legacy/rmc    # the 96 originals, untouched
+comments.py   pdftool.py   pdftool_fitz.py   pydup.py      extract.py     # the tools
+codecs.py     archive.py   annotations.py    rmc.py        deadcode.py    rmc_ts.py
+README.md     PLAN.md                                                    # docs
+arena/                                                                  # test harness
+sim/01.sh                                                               # your scratch file
+
+legacy/ does not exist any more: the 96 originals are in git history at 16208c1.
 PLAN.md
 ```

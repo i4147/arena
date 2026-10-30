@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """arena/make_dh_stubs.py — build the three `dh` signature variants rmc_ts.py must survive.
 
-`rmc/rmc_ts.py` filters its kwargs against whatever `TSStripper.__init__` the
+`rmc_ts.py` filters its kwargs against whatever `TSStripper.__init__` the
 installed `dh` declares, so that old and new revisions of your module both work.
 That claim is only worth something if it is exercised, so this script emits three
 importable packages, each named `dh`:
@@ -14,7 +14,7 @@ Each variant directory contains `dh.py` (and, for the wrappers, `_dh_base.py`)
 and is used as a PYTHONPATH entry:
 
     python arena/make_dh_stubs.py -o /tmp/dhstubs
-    PYTHONPATH=/tmp/dhstubs/old .venv/bin/python rmc/rmc_ts.py src/ -n
+    PYTHONPATH=/tmp/dhstubs/old .venv/bin/python rmc_ts.py src/ -n
 
 Exit codes: 0 written · 1 the stub could not be imported (missing tree-sitter) · 2 bad usage
 """
@@ -45,7 +45,7 @@ class TSStripper(_Base):
 OLD_SIGNATURE = '''    def __init__(self, strip_comments=True, strip_docstrings=True,
                  preserve_shebangs=True, preserve_module_docstring=True,
                  preserve_directives=True, validate=True):
-        # the signature set `legacy/rmc/rmc_termux.py` actually configures: no
+        # the signature set rmc_termux.py actually configures: no
         # remove_blank_lines (it collapses blank lines itself, afterwards) and no
         # preserve_commented_code.  rmc_ts.py must notice that from the signature,
         # not pass those two, and still honour --remove-blank-lines on its own.

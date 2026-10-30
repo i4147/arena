@@ -32,9 +32,9 @@ esac
 command -v "$PYTHON" >/dev/null 2>&1 || { echo "no such interpreter: $PYTHON" >&2; exit 1; }
 
 # Everything is optional at runtime; this set is what the sweeps exercise.
-#   pymupdf            -> g002/pdftool.py, g002/pdftool_fitz.py
-#   pypdf              -> g002/pdftool.py fallback path ("pypdf-only" test)
-#   libcst             -> g006/annotations.py, g001/comments.py, rmc/rmc.py backends
+#   pymupdf            -> pdftool.py, pdftool_fitz.py
+#   pypdf              -> pdftool.py fallback path ("pypdf-only" test)
+#   libcst             -> annotations.py, comments.py, rmc.py backends
 #   tree_sitter[_python]-> the tree-sitter backends everywhere + the dh stand-in
 #   pyflakes           -> the static check every file in this repo passes
 CORE=(pymupdf pypdf pyflakes)
@@ -66,6 +66,6 @@ printf '\ninstalled:\n'
     | grep -Ei '^(pymupdf|pypdf|libcst|tree[-_]sitter|pyflakes) ' \
     | sed 's/^/  /' || true
 
-printf '\nnext:\n  %s g002/pdftool_fitz.py doctor\n  %s/g002/pdftool.py doctor\n' \
-    "$VENV/bin/python" "$ROOT"
+printf '\nnext:\n  %s %s/pdftool_fitz.py doctor\n  %s %s/pdftool.py doctor\n' \
+    "$VENV/bin/python" "$ROOT" "$VENV/bin/python" "$ROOT"
 printf '  arena/verify_tools.sh          # static + --help sweep of all 11 files\n'

@@ -1180,7 +1180,7 @@ def emit(result: Result, palette: Palette, verbose: bool) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROG,
-        description="Remove comments from source files (consolidates g001).",
+        description="Remove comments from source files (consolidates nineteen g001 scripts).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "backends:\n"

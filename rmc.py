@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """rmc.py — strip comments, docstrings and type annotations from Python code.
 
-Consolidates rmc/'s twenty-nine scripts into one program with three engines:
+Consolidates the twenty-nine rmc scripts into one program with three engines:
 
     tree-sitter  byte precise spans, fastest, needs tree_sitter_python
     libcst       CST round-trip: exact whitespace, understands docstring owners

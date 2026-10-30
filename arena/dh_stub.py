@@ -3,9 +3,9 @@
 
 `dh` is not in this repository and is not on PyPI.  Fifteen of the original 96
 scripts imported it (`from dh import SKIP_DIRS, CSTStripper, TSStripper,
-atomic_write`) and so does the delivered `rmc/rmc_ts.py`, so nothing could be
+atomic_write`) and so does the delivered `rmc_ts.py`, so nothing could be
 tested end-to-end without one.  This module reproduces the interface that
-`legacy/rmc/rmc_termux.py` relies on, using the real py-tree-sitter grammar:
+your `rmc_termux.py` relies on, using the real py-tree-sitter grammar:
 
     from dh import SKIP_DIRS, TSStripper, atomic_write
     TSStripper(**config).strip(source: str) -> str
@@ -18,7 +18,7 @@ output will differ from yours in the corner cases your module was written for.
 To use it, make it importable under the name `dh` (never import it from the repo):
 
     mkdir -p /tmp/dhstub && cp arena/dh_stub.py /tmp/dhstub/dh.py
-    PYTHONPATH=/tmp/dhstub .venv/bin/python rmc/rmc_ts.py src/ -n
+    PYTHONPATH=/tmp/dhstub .venv/bin/python rmc_ts.py src/ -n
 
 `arena/smoke_rmc.sh` does exactly that, and `arena/make_dh_stubs.py` derives the
 older/newer signature variants that `rmc_ts.py`'s kwarg filter is there to absorb.

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """arena/parity_g006.py — prove g006's two removal backends agree byte for byte.
 
-The claim in PLAN.md §8 is that `g006/annotations.py remove` produces *identical*
+The claim in PLAN.md §8 is that `annotations.py remove` produces *identical*
 output from the tree-sitter and libcst backends.  That claim came from a loop in
 the session, and this file is that loop:
 
     python arena/parity_g006.py                  # fixed fixture set, all green or exit 1
-    python arena/parity_g006.py g002/pdftool.py src/   # your own files
+    python arena/parity_g006.py pdftool.py src/   # your own files
     python arena/parity_g006.py --keep /tmp/par     # leave the copies behind
 
 Each input is copied twice, one copy per backend, both are rewritten in place, and
@@ -29,15 +29,15 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-TOOL = ROOT / "g006" / "annotations.py"
+TOOL = ROOT / "annotations.py"
 
 #: the fixtures that were actually used: hand-written corner cases + real files
 FIXTURES = [
-    "g004/extract.py",        # plain defs, docstrings, returns
-    "g002/pdftool.py",        # dataclasses, `X | None`, decorators
-    "g005/codecs.py",         # enums, nested classes
-    "rmc/deadcode.py",        # heavy on ast.Call / comprehensions
-    "g001/comments.py",       # type comments, multiline signatures
+    "extract.py",        # plain defs, docstrings, returns
+    "pdftool.py",        # dataclasses, `X | None`, decorators
+    "codecs.py",         # enums, nested classes
+    "deadcode.py",       # heavy on ast.Call / comprehensions, annotated attributes
+    "comments.py",       # type comments, multiline signatures
 ]
 
 

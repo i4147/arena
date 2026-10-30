@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """deadcode.py — find and remove unused imports, definitions and boilerplate.
 
-Split out of rmc/pycleaner.py (1,275 lines), which lived in the comment-stripping
+Split out of pycleaner.py (1,275 lines), which lived in the comment-stripping
 folder but does something else entirely: it reasons about *names*, not syntax.
 
     deadcode.py imports [PATH…]   unused imports        (was: remove_import / rmunused)

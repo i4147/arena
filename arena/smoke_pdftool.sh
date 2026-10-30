@@ -18,14 +18,14 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-BUILD="$ROOT/g002/pdftool.py"
+BUILD="$ROOT/pdftool.py"
 KIND="multi"
 FIXTURES=""
 WITH_BIG=1
 
 for arg in "$@"; do
     case "$arg" in
-        --fitz) BUILD="$ROOT/g002/pdftool_fitz.py"; KIND="fitz" ;;
+        --fitz) BUILD="$ROOT/pdftool_fitz.py"; KIND="fitz" ;;
         --no-big) WITH_BIG=0 ;;
         -h|--help) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         -*) echo "unknown option: $arg" >&2; exit 2 ;;

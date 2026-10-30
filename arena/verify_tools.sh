@@ -8,7 +8,7 @@
 #   arena/verify_tools.sh              # everything, using .venv if present
 #   arena/verify_tools.sh --quick      # --help only (no pyflakes, no doctor)
 #   PYTHON=python3.12 arena/verify_tools.sh
-#   arena/verify_tools.sh g006/annotations.py rmc/rmc_ts.py    # just these
+#   arena/verify_tools.sh annotations.py rmc_ts.py    # just these
 #
 # Exit codes: 0 all green · 1 at least one hard failure · 2 bad usage
 
@@ -38,17 +38,17 @@ cd "$ROOT"
 
 # file | how to ask it about its engines ("-" = it has no probe)
 TABLE=(
-    "g001/comments.py|--doctor"
-    "g002/pdftool.py|doctor"
-    "g002/pdftool_fitz.py|doctor"
-    "g003/pydup.py|--doctor"
-    "g004/extract.py|-"
-    "g005/codecs.py|doctor"
-    "g005/archive.py|doctor"
-    "g006/annotations.py|doctor"
-    "rmc/rmc.py|doctor"
-    "rmc/deadcode.py|doctor"
-    "rmc/rmc_ts.py|-"
+    "comments.py|--doctor"
+    "pdftool.py|doctor"
+    "pdftool_fitz.py|doctor"
+    "pydup.py|--doctor"
+    "extract.py|-"
+    "codecs.py|doctor"
+    "archive.py|doctor"
+    "annotations.py|doctor"
+    "rmc.py|doctor"
+    "deadcode.py|doctor"
+    "rmc_ts.py|-"
 )
 
 [ "${#FILES[@]}" -gt 0 ] && TABLE=()
