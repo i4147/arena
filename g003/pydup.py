@@ -1,4 +1,34 @@
-#!/data/data/com.termux/files/usr/bin/env python
+#!/usr/bin/env python3
+"""pydup.py — one duplicate finder for the two scripts that were in g003.
+
+`python_duplicate_finder.py` (2,430 lines) is a strict subset of `pydup.py`
+(2,954): same scanner, same normaliser, 620 lines fewer — no tlsh, no
+minhash/LSH banding, no simhash, three executor strategies instead of eight.
+The superset was kept as-is and the subset archived to `legacy/g003/`.
+
+What it finds, and how:
+
+    duplicates        normalized-AST fingerprints, `--mode strict|default|loose|structural`
+    definitions       `--functions`: same function/class body in another file
+    near-duplicates   `--similarity N` (difflib) plus optional
+                      `--ssdeep · --tlsh · --minhash · --simhash` hashers
+
+Actions: report by default; `-r` removes, `--to-trash`, `--quarantine DIR`,
+`--dry-run`, `--keep first|oldest|newest|shortest|longest|pattern|prefer`.
+
+Optional packages are probed at run time — `--doctor` prints what is usable and
+what each missing wheel would enable.  Every mode still works without them; only
+the *quality* of near-duplicate detection changes.
+
+    pydup.py --doctor
+    pydup.py src/ --mode default
+    pydup.py . --similarity 90 --minhash --format json
+    pydup.py a.py b.py --functions --stats
+    pydup.py . --dry-run --keep oldest
+
+Exit codes: 0 success · 1 with --fail-on-dupes/--fail-on-error · 2 usage · 130 interrupted
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -1856,7 +1886,45 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     verbosity.add_argument("-q", "--quiet", action="store_true", help="only log errors")
     parser.add_argument("--log-format", choices=("text", "json"), default="text", help="log line format on stderr")
     parser.add_argument("--version", action="version", version=f"pydup {__version__}")
+    parser.add_argument("--doctor", action="store_true",
+                        help="report which optional hashers are available and exit")
     return parser.parse_args(argv)
+
+
+def _print_doctor() -> int:
+    """Which optional probes exist — the only thing that changes results."""
+    rows = (
+        ("ssdeep", _ssdeep is not None, "pip install ssdeep", "fuzzy hashing (--ssdeep)"),
+        ("tlsh", _tlsh is not None, "pip install tlsh", "TLSH locality hashing (--tlsh)"),
+        ("xxhash", _xxhash_is_real(), "pip install xxhash", "faster file fingerprints"),
+        ("pathspec", _pathspec is not None, "pip install pathspec", "respect .gitignore"),
+        ("rich", _probe("rich") is not None, "pip install rich", "progress bars (--rich)"),
+        ("watchdog", _probe("watchdog") is not None, "pip install watchdog", "continuous --watch"),
+        ("send2trash", _probe("send2trash") is not None, "pip install send2trash", "safer --trash"),
+    )
+    print(f"pydup {__version__}  python {sys.version.split()[0]}  ({os.cpu_count()} cpu)\n")
+    print(f"{'package':<12}{'status':<9}{'enables':<34}hint")
+    for name, ok, hint, enables in rows:
+        print(f"{name:<12}{'ok' if ok else 'missing':<9}{enables:<34}{'' if ok else hint}")
+    print("\nstdlib fallbacks keep every mode working; only hashing quality changes.")
+    return 0
+
+
+def _xxhash_is_real() -> bool:
+    import importlib.util
+
+    return importlib.util.find_spec("xxhash") is not None
+
+
+def _probe(name: str) -> object | None:
+    import importlib.util
+
+    if importlib.util.find_spec(name) is None:
+        return None
+    try:
+        return __import__(name)
+    except Exception:  # noqa: BLE001 - a broken wheel is the same as absent here
+        return None
 
 
 class _JsonLogFormatter(logging.Formatter):
@@ -2940,6 +3008,8 @@ def _run(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
+    if getattr(args, "doctor", False):
+        return _print_doctor()
     _configure_logging(args.verbose, args.quiet, args.log_format)
     try:
         return _run(args)
