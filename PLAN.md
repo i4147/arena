@@ -14,15 +14,15 @@
 | `g003` | find duplicate & near-duplicate Python files | 2 | → | `g003/pydup.py` | **3,024** ✅ |
 | `g004` | extract artifacts (classes, funcs, docstrings, imports, constants) | 6 | → | `g004/extract.py` | **563** ✅ |
 | `g005` | compress single streams / archive containers / benchmark | 24 | → | `g005/codecs.py` + `g005/archive.py` | **1,238 + 1,426** ✅ |
-| `g006` | add **or** remove type annotations | 4 | → | `g006/annotations.py` | **1,036** ✅ |
+| `g006` | add **or** remove type annotations | 4 | → | `g006/annotations.py` | **1,034** ✅ |
 | `rmc` | strip comments/docstrings/annotations **and** dead code from Python | 29 | → | `rmc/rmc.py` + `rmc/deadcode.py` | **1,293 + 614** ✅ |
 | `g002` | *variant:* same PDF jobs, **PyMuPDF only** (no fallback engines) | — | → | `g002/pdftool_fitz.py` | **981** ✅ |
-| `rmc` | *variant:* same stripping, **`dh.TSStripper` only** + `ProcessPoolExecutor` | — | → | `rmc/rmc_ts.py` | **422** ✅ |
+| `rmc` | *variant:* same stripping, **`dh.TSStripper` only** + `ProcessPoolExecutor` | — | → | `rmc/rmc_ts.py` | **470** ✅ |
 | `sim` | only `01.sh` (a 6-line `pwd; ls; git status` scratch file) | 0 py | — | skipped, per your instruction | — |
 
-**45,266 → 11,848 lines (−73.8%), 96 files → 9.** The two `variant` rows are
+**45,266 → 11,846 lines (−73.8%), 96 files → 9.** The two `variant` rows are
 extra, single-dependency builds that sit *next to* the consolidated tools and are
-counted separately: **+1,403 lines → 13,251 total** if you include them.
+counted separately: **+1,451 lines → 13,297 total** if you include them.
 
 Two folders are two tools each, on your call (§7): `g005` splits *streams* from
 *containers* (`codecs.py` / `archive.py`), and `rmc` splits *comment stripping*
@@ -495,11 +495,11 @@ still has one; nothing was trimmed to make the help text shorter.
 | `g004/extract.py` | 563 | (one operation) `--kinds` | 12 outputs on a fixture tree, `--dedupe content`, `--nested --header`, syntax-error → exit 1 |
 | `g005/codecs.py` | 1,238 | `compress decompress bench inspect doctor` | 9 codecs × round-trip hash, framed blocks, `--verify`, dry-run, duplicate-target guard |
 | `g005/archive.py` | 1,426 | `pack unpack list info check split remove merge convert fix bench doctor` | 13 formats round-trip, zip-slip refusal, `--per-subdir --merge`, 7z member filter |
-| `g006/annotations.py` | 1,036 | `add remove check doctor` | heuristic adds, stub adds, 3 remove backends (`tree-sitter` == `libcst` byte-identical), type comments, gate rejections |
+| `g006/annotations.py` | 1,034 | `add remove check doctor` | heuristic adds, stub adds, 3 remove backends (`tree-sitter` == `libcst` byte-identical on 104 files), type comments, gate rejections |
 | `rmc/rmc.py` | 1,293 | `strip check bench doctor` | engine parity matrix (`-d`/`-t` identical across 3 engines), idempotence, verify() rejection |
 | `rmc/deadcode.py` | 614 | `imports unused block doctor` | grouped findings, `--apply` rewrites, `--check exit 1`, per-file compile gate |
 | `g002/pdftool_fitz.py` | 981 | same eleven as `pdftool.py` | all subcommands on generated PDFs, `shrink -l 1/2/3`, simulated missing-PyMuPDF → exit 2 |
-| `rmc/rmc_ts.py` | 422 | `(strip) doctor-less, --check/--json` | 3 `dh` signature variants, `-j 1` == `-j 8`, idempotence, compile gate, 96-file batch |
+| `rmc/rmc_ts.py` | 470 | `(strip) doctor-less, --check/--json` | 3 `dh` signature variants, `-j 1` == `-j 8`, idempotence, compile gate, 96-file batch |
 
 **How "the goals still hold" was checked, per file** — the same six checks every
 time, on fixtures in `/tmp`:
@@ -557,7 +557,7 @@ bytes), `view` without a tty, `outline --summary/--html/--sync-titles`
 (`info` still reports it), bad page range → exit 2, and a simulated
 `pymupdf`-missing import → `doctor` exit 2.
 
-### 9.2 `rmc/rmc_ts.py` — `dh.TSStripper` only · 422 lines
+### 9.2 `rmc/rmc_ts.py` — `dh.TSStripper` only · 470 lines
 
 The simple version of `rmc/rmc.py`. It imports your module and trusts it:
 
@@ -574,13 +574,14 @@ makes an in-place rewriter safe, and the parallel loop:
   threads. One stripper per worker process, built once (`stripper_for()`) and
   cached; `-j N` defaults to `min(8, cpu_count)`, and `-j 1` runs in-process so
   a single file does not pay for a fork.
-* **Kwargs are filtered to what your `dh` actually declares** — `strip_comments`,
-  `strip_docstrings`, `remove_blank_lines`, `strip_all`, `preserve_shebangs`,
-  `preserve_module_docstring`, `preserve_directives`, `preserve_commented_code`,
-  `validate`. If the installed `TSStripper.__init__` has no `remove_blank_lines`,
-  the flag is reported as ignored instead of raising `TypeError`; if it takes
-  `**kwargs`, everything is passed through. This is why the file works against
-  older and newer revisions of `dh` alike.
+* **Kwargs are filtered to what your `dh` actually declares** — exactly the seven
+  knobs `legacy/rmc/rmc_termux.py` sets: `strip_comments`, `strip_docstrings`,
+  `preserve_shebangs`, `preserve_module_docstring`, `preserve_directives`,
+  `preserve_commented_code`, `validate`. Nothing is invented; an unknown kwarg is
+  how you get a `TypeError` from a `dh` revision nobody has seen. If the
+  installed `TSStripper` also takes `remove_blank_lines` it is used, and if it
+  does not, `--remove-blank-lines` is applied here instead — once, after the
+  strip, with an AST-equality guard — so the flag never silently does nothing.
 * **A compile gate on every write** — the stripped source must `ast.parse`, or
   the file is left untouched and reported as a failure. A file that never parsed
   (3.12-only syntax on a 3.11 interpreter) is reported as *skipped*, not failed.
@@ -595,14 +596,44 @@ If `dh` is not importable the script prints the `ImportError` and exits 2 rather
 than silently doing something else; the import is at module scope but guarded, so
 `--help` still works.
 
-*Proven:* against a stand-in `dh` module in `/tmp` (real py-tree-sitter grammar,
-same `TSStripper(**kwargs).strip(source)` interface as `rmc_termux.py` uses):
-`-j 1` and `-j 8` produce byte-identical trees, output is idempotent, `--check`
-exits 1 on pending work and 0 after, `--diff`/`-n` write nothing, `--backup`
-keeps the original, `--remove-blank-lines` works and warns on old signatures,
-`node_modules/.venv` are skipped, `--json` parses, and 96 legacy files run in
-0.39 s at `-j 8` vs 0.71 s at `-j 1`. Three signature variants of `dh`
-(current, old 4-kwarg, `**kwargs`) were each driven end-to-end.
+*Proven:* by `arena/smoke_rmc.sh` (30 checks, against a stand-in `dh` from
+`arena/dh_stub.py` — real py-tree-sitter grammar, same
+`TSStripper(**kwargs).strip(source)` interface `rmc_termux.py` uses): `-j 1` and
+`-j 8` produce byte-identical trees, output is idempotent, `--check` exits 1 on
+pending work and 0 after, `--diff`/`-n` write nothing, `--backup` keeps the
+original, `--remove-blank-lines` collapses locally when dh lacks the kwarg,
+`node_modules/.venv` are skipped, `--json` parses, `--help` works with no `dh` at
+all while a real run without it exits 2, and 96 legacy files run in 0.51 s at
+`-j 8` vs 0.81 s at `-j 1`. Three signature variants of `dh` (current, the
+seven-kwarg legacy shape, `**kwargs`) were each driven end-to-end.
+
+## 10. The helper scripts, kept in `arena/`
+
+The session's test harness lives in `arena/` so every claim above can be re-run
+rather than believed. `arena/README.md` documents each file; the short version:
+
+| helper | what it re-runs |
+|---|---|
+| `setup_venv.sh` | rebuilds `.venv` (pymupdf pypdf libcst tree-sitter pyflakes) in ~14 s |
+| `verify_tools.sh` | `pyflakes` + `--help` + `doctor` over all eleven files — **11/11 green** |
+| `make_pdf_fixtures.py` | `/tmp/pdft`: `doc1.pdf` 3 pp, `doc2.pdf` 2 pp, `big.pdf` 100.1 MiB, `SUMMARY.md`, `print.html` |
+| `smoke_pdftool.sh` | **37 checks** on `pdftool.py`, **41** with `--fitz`, all passing |
+| `smoke_rmc.sh` | **30 checks** on `rmc_ts.py`, including three `dh` signatures and the 96-file batch |
+| `parity_g006.py` | tree-sitter vs libcst removal, `cmp` per file — **104 identical, 0 different** |
+| `dh_stub.py`, `make_dh_stubs.py` | the stand-in `dh` and its older/newer signature variants |
+| `sync_branch.sh` | recovers a checkout whose `.git/` reverted to the initial commit |
+| `patches/*.diff` | the 100 MiB guard and the §9 edit, reviewable in isolation |
+
+Two real defects came out of writing these down, both after the tools had been
+signed off:
+
+1. `g006/annotations.py` turned `x: str  # note` into `x# note` — `_ts_span()`
+   trimmed trailing whitespace that belongs to the line, not to the annotation.
+   Fixed (1,036 → 1,034 lines), and the parity check that missed it now runs
+   against every file in the repo.
+2. `rmc/rmc_ts.py` passed a `strip_all` kwarg no `dh` revision documents, and
+   ignored `--remove-blank-lines` on signatures that lack it. Both fixed as
+   described in §9.2.
 
 ### Layout
 
@@ -611,6 +642,7 @@ g001/comments.py       g002/pdftool.py      g003/pydup.py      g004/extract.py
 g005/codecs.py         g005/archive.py     g006/annotations.py
 rmc/rmc.py             rmc/deadcode.py      rmc/rmc_ts.py      # dh-only variant
 g002/pdftool_fitz.py                        # PyMuPDF-only variant
+arena/                                      # the test harness (README.md inside)
 legacy/g001 … legacy/rmc    # the 96 originals, untouched
 PLAN.md
 ```

@@ -373,11 +373,9 @@ def _ts_span(raw: bytes, node, arrow: bool) -> tuple[int, int] | None:
         begin = index
     while begin > 0 and raw[begin - 1:begin] in b" \t":
         begin -= 1
-    trimmed = end
-    while trimmed < len(raw) and raw[trimmed:trimmed + 1] in b" \t":
-        trimmed += 1
-    if raw[trimmed:trimmed + 1] != b"=":
-        end = trimmed  # keep the space in `x: int = 1` so it becomes `x = 1`
+    # Deliberately no trailing trim: the spaces after the annotation belong to the
+    # line, not to the annotation.  `x: int = 1` must become `x = 1` (not `x= 1`),
+    # and `x: int  # note` must become `x  # note` (not `x# note`).
     return begin, end
 
 

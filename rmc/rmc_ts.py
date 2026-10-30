@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import ast
 import difflib
+import re
 import fnmatch
 import io
 import json
@@ -62,6 +63,7 @@ FALLBACK_SKIP_DIRS = frozenset({
     ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox", ".cache", "target", "dist", "build",
 })
 SKIP_DIRS = frozenset(getattr(dh, "SKIP_DIRS", FALLBACK_SKIP_DIRS)) if dh is not None else FALLBACK_SKIP_DIRS
+_COOKIE_RE = re.compile(rb"coding[:=]\s*[-\w.]+")
 
 
 # --------------------------------------------------------------------------- #
@@ -70,6 +72,8 @@ SKIP_DIRS = frozenset(getattr(dh, "SKIP_DIRS", FALLBACK_SKIP_DIRS)) if dh is not
 
 _STRIPPER: object | None = None
 _STRIPPER_KEY: tuple | None = None
+_BLANK_OK: bool | None = None
+_BLANK_NOTED = False
 
 
 def build_stripper(config: tuple) -> object:
@@ -77,26 +81,34 @@ def build_stripper(config: tuple) -> object:
     if TSStripper is None:
         raise RuntimeError(f"cannot import TSStripper from dh ({_DH_IMPORT_ERROR})")
     strip_comments, strip_docstrings, strip_all, blank_lines = config
+    # Exactly the knobs `legacy/rmc/rmc_termux.py` sets on your stripper, no more:
+    # inventing a kwarg here is how you get a TypeError from a dh we have not seen.
     wanted = {
         "strip_comments": strip_comments or strip_all,
         "strip_docstrings": strip_docstrings or strip_all,
-        "remove_blank_lines": blank_lines,
-        "strip_all": strip_all,
         "preserve_shebangs": not strip_all,
         "preserve_module_docstring": not strip_all,
         "preserve_directives": not strip_all,
         "preserve_commented_code": True,
         "validate": True,
     }
+    if blank_lines:
+        wanted["remove_blank_lines"] = True          # only if dh knows the name
     accepted = _accepted_kwargs(TSStripper)
     if accepted is None:  # **kwargs, or a signature we cannot read: pass everything
         kwargs = wanted
     else:
         kwargs = {key: value for key, value in wanted.items() if key in accepted}
-        if blank_lines and "remove_blank_lines" not in accepted:
-            print("note: this TSStripper has no remove_blank_lines kwarg; "
-                  "--remove-blank-lines is ignored", file=sys.stderr)
     return TSStripper(**kwargs)
+
+
+def blank_lines_supported() -> bool:
+    """True if the installed TSStripper takes `remove_blank_lines` itself."""
+    global _BLANK_OK
+    if _BLANK_OK is None:
+        accepted = _accepted_kwargs(TSStripper)
+        _BLANK_OK = accepted is None or "remove_blank_lines" in accepted
+    return _BLANK_OK
 
 
 def _accepted_kwargs(cls) -> set[str] | None:
@@ -155,6 +167,7 @@ class Outcome:
 
 def strip_one(job: Job) -> Outcome:
     """Worker: runs in a subprocess.  Must stay a module-level function (pickling)."""
+    global _BLANK_NOTED
     started = time.perf_counter()
     path = Path(job.path)
     outcome = Outcome(job.path)
@@ -180,6 +193,13 @@ def strip_one(job: Job) -> Outcome:
                 outcome.detail = "source does not parse with this interpreter"
                 return outcome
             raise
+        if job.config[3] and not blank_lines_supported():
+            # older dh has no such kwarg: collapse here, with the same AST guard
+            if not _BLANK_NOTED:
+                print("note: this TSStripper has no remove_blank_lines kwarg; "
+                      "collapsing blank lines locally", file=sys.stderr)
+                _BLANK_NOTED = True
+            stripped = remove_blank_lines(stripped)
         if stripped == source:
             outcome.before = outcome.after = len(original)
             return outcome
@@ -217,6 +237,34 @@ def strip_one(job: Job) -> Outcome:
     finally:
         outcome.elapsed = time.perf_counter() - started
     return outcome
+
+
+def remove_blank_lines(source: str) -> str:
+    """Drop whitespace-only lines, protecting continuations and multi-line tokens.
+
+    Same contract as the legacy `remove_blank_lines`: if the result would not have
+    the same AST, the file is left alone (the caller turns that into an error).
+    """
+    protected: set[int] = set()
+    try:
+        for token in tokenize.generate_tokens(io.StringIO(source).readline):
+            if token.start[0] != token.end[0]:
+                protected.update(range(token.start[0], token.end[0] + 1))
+    except (tokenize.TokenError, IndentationError, SyntaxError):
+        return source
+    lines = io.StringIO(source).readlines()
+    for row, line in enumerate(lines, 1):
+        if line.rstrip("\r\n").endswith("\\"):
+            protected.add(row + 1)
+        if row <= 2 and _COOKIE_RE.search(line.encode("utf-8")):
+            protected.update(range(1, row + 1))
+    result = "".join(
+        line for row, line in enumerate(lines, 1)
+        if row in protected or line.strip(" \t\f\r\n")
+    )
+    if ast.dump(ast.parse(source)) != ast.dump(ast.parse(result)):
+        return source
+    return result
 
 
 def _parses(source: str) -> bool:
