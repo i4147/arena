@@ -10,7 +10,7 @@
 | dir | theme (as actually implemented) | scripts | → | consolidated file | lines |
 |---|---|---|---|---|---|
 | `g001` | strip comments from source code, 22 languages | 19 | → | `g001/comments.py` | **1,414** ✅ |
-| `g002` | read / render / restructure PDFs | 12 | → | `g002/pdftool.py` | **1,104** ✅ |
+| `g002` | read / render / restructure PDFs | 12 | → | `g002/pdftool.py` | **1,240** ✅ |
 | `g003` | find duplicate & near-duplicate Python files | 2 | → | `g003/pydup.py` | **3,024** ✅ |
 | `g004` | extract artifacts (classes, funcs, docstrings, imports, constants) | 6 | → | `g004/extract.py` | **563** ✅ |
 | `g005` | compress single streams / archive containers / benchmark | 24 | → | `g005/codecs.py` + `g005/archive.py` | **1,238 + 1,426** ✅ |
@@ -18,7 +18,7 @@
 | `rmc` | strip comments/docstrings/annotations **and** dead code from Python | 29 | → | `rmc/rmc.py` + `rmc/deadcode.py` | **1,293 + 614** ✅ |
 | `sim` | only `01.sh` (a 6-line `pwd; ls; git status` scratch file) | 0 py | — | skipped, per your instruction | — |
 
-**45,266 → 11,712 lines (−74%), 96 files → 9.**
+**45,266 → 11,766 lines (−74%), 96 files → 9.**
 
 Two folders are two tools each, on your call (§7): `g005` splits *streams* from
 *containers* (`codecs.py` / `archive.py`), and `rmc` splits *comment stripping*
@@ -193,6 +193,25 @@ pdftool info     [--json]
 `view --render image|text` merges the four viewers: `pdfv/pdfv2/pdfviewer` are the image (ANSI half-block) family with different renderers; `pdfview` is the pager family.
 
 Kept: mdBook `SUMMARY.md` outline builder with the `--sync-titles` self-healing path from `pdftoolz` (the pypdf version in `pdftools2` dies when `named_destinations` is missing).
+
+**Guard rails.** A PDF over **100 MiB** is skipped, not parsed — one runaway file
+must not stall a batch or blow up a merge:
+
+```
+--max-size SIZE    default 100M; K/M/G suffixes, 0 = off
+--no-max-size      same as --max-size 0
+--max-pages N      also skip documents with more than N pages (default: no limit)
+```
+
+The size test happens in the walker, before the file is ever opened, so a 400 MB
+PDF costs one `stat()`. `--max-pages` needs the page count and therefore runs
+right after `open_doc`. Skips are reported on stderr (`docs/big.pdf: skipped
+(412.0 MiB > 100.0 MiB limit)`), counted separately from failures in the summary
+line (`2/3 ok · 1 skipped`) and in `--json` (`counts.skipped` plus a
+`"action": "skipped"` record carrying the reason), and they do not change the
+exit code — a skip is not an error. `info` is exempt on purpose: it is the
+command you use to find out *why* something is being skipped. `merge` warns and
+merges the rest instead of silently dropping pages.
 
 ---
 
@@ -467,7 +486,7 @@ still has one; nothing was trimmed to make the help text shorter.
 | file | lines | subcommands | validated against |
 |---|---|---|---|
 | `g001/comments.py` | 1,414 | (one operation) `-b tree-sitter\|regex\|libcst\|minify` | 9-file / 8-language fixture, backend parity, idempotence, `-j 8` == serial, token gate |
-| `g002/pdftool.py` | 1,104 | `text image view merge split extract shrink check outline info doctor` | generated PDFs, pymupdf **and** pypdf-only paths, `--sync-titles` alignment, page-range errors, dry-run purity |
+| `g002/pdftool.py` | 1,240 | `text image view merge split extract shrink check outline info doctor` | generated PDFs, pymupdf **and** pypdf-only paths, `--sync-titles` alignment, 100 MiB / `--max-pages` skips, page-range errors, dry-run purity |
 | `g003/pydup.py` | 3,024 | one scanner + `--doctor` | fixture tree, `text/json/ndjson/csv`, dry-run removal plan, exit codes |
 | `g004/extract.py` | 563 | (one operation) `--kinds` | 12 outputs on a fixture tree, `--dedupe content`, `--nested --header`, syntax-error → exit 1 |
 | `g005/codecs.py` | 1,238 | `compress decompress bench inspect doctor` | 9 codecs × round-trip hash, framed blocks, `--verify`, dry-run, duplicate-target guard |
