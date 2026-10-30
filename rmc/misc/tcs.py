@@ -1,4 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/env python
+"""Python source *compressor*: shrink indentation, mangle private names, strip comments.
+
+This script was the odd one out in ``rmc/``: everything else there removes
+comments, while this one rewrites Python into a denser but still valid form
+(shortening identifiers, collapsing indentation) and can push the result to the
+clipboard with ``-x``.
+
+It is kept separately under ``misc/`` instead of being folded into ``rmc.py``
+because it answers a different question ("make this file smaller") and its
+name-mangling is not safe to run over a package by accident.
+
+Usage: python tcs.py [-m] [-x] FILE...
+"""
+
 from __future__ import annotations
 
 import ast
