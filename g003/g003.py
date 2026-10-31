@@ -1,35 +1,63 @@
-#!/usr/bin/env python3
-"""pydup.py — one duplicate finder for the two scripts that were in g003.
+#!/data/data/com.termux/files/usr/bin/env python3
+"""g003 - consolidated duplicate-code finder.
 
-`python_duplicate_finder.py` (2,430 lines) is a strict subset of `pydup.py`
-(2,954): same scanner, same normaliser, 620 lines fewer — no tlsh, no
-minhash/LSH banding, no simhash, three executor strategies instead of eight.
-The two originals lived in the (now removed) `g003/` folder; the subset was
-never worth keeping, the superset is this file.
+Everything that used to live in this folder as separate scripts now lives in
+this one file.  Each tool's original source is embedded verbatim below, so
+nothing was lost: ``python g003.py unpack <tool>`` writes the original
+file back out.
 
-What it finds, and how:
+Two generations of the same 2.4k/3k-line scanner; the newer, larger one
+(content, near-duplicate and definition clustering) is kept.
 
-    duplicates        normalized-AST fingerprints, `--mode strict|default|loose|structural`
-    definitions       `--functions`: same function/class body in another file
-    near-duplicates   `--similarity N` (difflib) plus optional
-                      `--ssdeep · --tlsh · --minhash · --simhash` hashers
+Tools
+-----
+pydup  Duplicate / near-duplicate / duplicate-definition finder with caching, watch mode, multiple fuzzy hashes and a JSON report.
+       from pydup.py (2954 lines)
 
-Actions: report by default; `-r` removes, `--to-trash`, `--quarantine DIR`,
-`--dry-run`, `--keep first|oldest|newest|shortest|longest|pattern|prefer`.
+Usage
+-----
+    python g003.py list                 # list the tools
+    python g003.py doctor               # report missing third-party packages
+    python g003.py <tool> --help        # help for one tool
+    python g003.py pydup <args>
+    python g003.py unpack <tool> [-o DIR] [--stdout]
 
-Optional packages are probed at run time — `--doctor` prints what is usable and
-what each missing wheel would enable.  Every mode still works without them; only
-the *quality* of near-duplicate detection changes.
-
-    pydup.py --doctor
-    pydup.py src/ --mode default
-    pydup.py . --similarity 90 --minhash --format json
-    pydup.py a.py b.py --functions --stats
-    pydup.py . --dry-run --keep oldest
-
-Exit codes: 0 success · 1 with --fail-on-dupes/--fail-on-error · 2 usage · 130 interrupted
+Requires Python 3.10+.  Individual tools need their own third-party packages;
+run ``doctor`` to see which are missing.
 """
 
+from __future__ import annotations
+
+import argparse
+import ast
+import base64
+import difflib
+import importlib.util
+import inspect
+import sys
+import types
+import zlib
+from pathlib import Path
+
+FOLDER = "g003"
+
+
+_HERE = Path(__file__).resolve().parent if "__file__" in globals() else None
+
+TOOLS: dict[str, dict[str, object]] = {
+    "pydup": {"source": "pydup.py", "lines": 2954, "summary": 'Duplicate / near-duplicate / duplicate-definition finder with caching, watch mode, multiple fuzzy hashes and a JSON report.'},
+}
+
+_SOURCES: dict[str, str] = {}
+_LOADED: dict[str, types.ModuleType] = {}
+
+
+def _decode(*chunks: str) -> str:
+    """Fallback representation for sources that cannot be written as raw strings."""
+    return zlib.decompress(base64.b85decode("".join(chunks))).decode("utf-8")
+
+
+_SOURCES['pydup'] = r"""#!/data/data/com.termux/files/usr/bin/env python
 from __future__ import annotations
 
 import argparse
@@ -1887,45 +1915,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     verbosity.add_argument("-q", "--quiet", action="store_true", help="only log errors")
     parser.add_argument("--log-format", choices=("text", "json"), default="text", help="log line format on stderr")
     parser.add_argument("--version", action="version", version=f"pydup {__version__}")
-    parser.add_argument("--doctor", action="store_true",
-                        help="report which optional hashers are available and exit")
     return parser.parse_args(argv)
-
-
-def _print_doctor() -> int:
-    """Which optional probes exist — the only thing that changes results."""
-    rows = (
-        ("ssdeep", _ssdeep is not None, "pip install ssdeep", "fuzzy hashing (--ssdeep)"),
-        ("tlsh", _tlsh is not None, "pip install tlsh", "TLSH locality hashing (--tlsh)"),
-        ("xxhash", _xxhash_is_real(), "pip install xxhash", "faster file fingerprints"),
-        ("pathspec", _pathspec is not None, "pip install pathspec", "respect .gitignore"),
-        ("rich", _probe("rich") is not None, "pip install rich", "progress bars (--rich)"),
-        ("watchdog", _probe("watchdog") is not None, "pip install watchdog", "continuous --watch"),
-        ("send2trash", _probe("send2trash") is not None, "pip install send2trash", "safer --trash"),
-    )
-    print(f"pydup {__version__}  python {sys.version.split()[0]}  ({os.cpu_count()} cpu)\n")
-    print(f"{'package':<12}{'status':<9}{'enables':<34}hint")
-    for name, ok, hint, enables in rows:
-        print(f"{name:<12}{'ok' if ok else 'missing':<9}{enables:<34}{'' if ok else hint}")
-    print("\nstdlib fallbacks keep every mode working; only hashing quality changes.")
-    return 0
-
-
-def _xxhash_is_real() -> bool:
-    import importlib.util
-
-    return importlib.util.find_spec("xxhash") is not None
-
-
-def _probe(name: str) -> object | None:
-    import importlib.util
-
-    if importlib.util.find_spec(name) is None:
-        return None
-    try:
-        return __import__(name)
-    except Exception:  # noqa: BLE001 - a broken wheel is the same as absent here
-        return None
 
 
 class _JsonLogFormatter(logging.Formatter):
@@ -3009,8 +2999,6 @@ def _run(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
-    if getattr(args, "doctor", False):
-        return _print_doctor()
     _configure_logging(args.verbose, args.quiet, args.log_format)
     try:
         return _run(args)
@@ -3019,6 +3007,285 @@ def main(argv: list[str] | None = None) -> int:
         return 130
     except BrokenPipeError:
         return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+"""
+
+
+
+# --------------------------------------------------------------------------- #
+# runtime
+# --------------------------------------------------------------------------- #
+def _module_name(tool: str) -> str:
+    return f"_consolidated_{FOLDER}_{tool}"
+
+
+def load(tool: str) -> types.ModuleType:
+    """Execute the embedded source of *tool* once and return its module."""
+    cached = _LOADED.get(tool)
+    if cached is not None:
+        return cached
+    if tool not in TOOLS:
+        raise KeyError(tool)
+    name = _module_name(tool)
+    module = types.ModuleType(name)
+    path = None
+    if _HERE is not None:
+        path = str(_HERE / str(TOOLS[tool]["source"]))
+    module.__file__ = path or f"<{FOLDER}.py:{tool}>"
+    module.__package__ = name
+    module.__dict__["__builtins__"] = __builtins__
+    sys.modules[name] = module
+    try:
+        exec(compile(_SOURCES[tool], module.__file__, "exec"), module.__dict__)
+    except ModuleNotFoundError as exc:
+        sys.modules.pop(name, None)
+        missing = exc.name or "?"
+        raise SystemExit(
+            f"{FOLDER}.py: tool {tool!r} needs the {missing!r} package.\n"
+            f"  install it with: pip install {_pip_name(missing)}"
+        ) from None
+    except BaseException:
+        sys.modules.pop(name, None)
+        raise
+    _LOADED[tool] = module
+    return module
+
+
+def _pip_name(module: str) -> str:
+    aliases = {
+        "fitz": "PyMuPDF", "pymupdf": "PyMuPDF", "PyPDF2": "PyPDF2", "pypdf": "pypdf",
+        "pdfplumber": "pdfplumber", "pdfminer": "pdfminer.six", "libcst": "libcst",
+        "loguru": "loguru", "rich": "rich", "tree_sitter": "tree-sitter",
+        "py7zr": "py7zr", "zstandard": "zstandard", "lz4": "lz4", "brotli": "Brotli",
+        "cramjam": "cramjam", "snappy": "python-snappy", "pylzma": "pylzma",
+        "pyppmd": "pyppmd", "joblib": "joblib", "xxhash": "xxhash",
+        "pathspec": "pathspec", "send2trash": "Send2Trash", "watchdog": "watchdog",
+        "ssdeep": "ssdeep", "tlsh": "py-tlsh", "rjsmin": "rjsmin", "jsmin": "jsmin",
+        "csscompressor": "csscompressor", "tinycss2": "tinycss2", "htmlmin": "htmlmin",
+        "luaparse": "luaparse", "readchar": "readchar",
+    }
+    if module.startswith("tree_sitter_"):
+        return "tree-sitter-" + module[len("tree_sitter_"):].replace("_", "-")
+    return aliases.get(module, module.replace("_", "-"))
+
+
+def _entry(module: types.ModuleType):
+    for attribute in ("main", "run", "entrypoint", "cli"):
+        function = getattr(module, attribute, None)
+        if callable(function) and getattr(function, "__module__", None) == module.__name__:
+            return function, attribute
+    return None, None
+
+
+def run(tool: str, argv: list[str]) -> int:
+    """Run one embedded tool with *argv* as its command line."""
+    module = load(tool)
+    function, attribute = _entry(module)
+    if function is None:
+        print(f"{FOLDER}.py: {tool!r} exposes no main()/run()/entrypoint()", file=sys.stderr)
+        return 2
+    try:
+        parameters = inspect.signature(function).parameters.values()
+    except (TypeError, ValueError):
+        parameters = ()
+    positional = [
+        p for p in parameters
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD) and p.default is p.empty
+    ]
+    optional = [
+        p for p in parameters
+        if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD) and p.default is not p.empty
+    ]
+    saved = sys.argv
+    sys.argv = [f"{FOLDER}.py {tool}"] + list(argv)
+    try:
+        if positional:
+            if len(positional) > 1:
+                print(f"{FOLDER}.py: cannot call {tool}.{attribute}(): it wants {len(positional)} arguments",
+                      file=sys.stderr)
+                return 2
+            result = function(list(argv))
+        elif optional:
+            result = function(list(argv))
+        else:
+            result = function()
+    except KeyboardInterrupt:
+        print(f"{FOLDER}.py: {tool} interrupted", file=sys.stderr)
+        return 130
+    finally:
+        sys.argv = saved
+    return result if isinstance(result, int) else 0
+
+
+def _fatal(statement: ast.stmt) -> bool:
+    """True when *statement* aborts the program (raise / sys.exit / SystemExit)."""
+    if isinstance(statement, ast.Raise):
+        return True
+    for node in ast.walk(statement):
+        if isinstance(node, ast.Name) and node.id == "SystemExit":
+            return True
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "exit":
+            return True
+    return False
+
+
+def _third_party(tool: str) -> tuple[list[str], list[str]]:
+    """Return ``(required, optional)`` third-party modules imported by *tool*.
+
+    Only module level imports are considered, and anything imported inside a
+    module level ``try:`` block counts as optional: the tool already handles its
+    absence (that is what the guard is for).
+    """
+    try:
+        tree = ast.parse(_SOURCES[tool])
+    except SyntaxError:
+        return [], []
+
+    required: list[str] = []
+    optional: list[str] = []
+
+    def note(name: str, bucket: list[str]) -> None:
+        if name in sys.stdlib_module_names or name == "__future__":
+            return
+        if name not in bucket:
+            bucket.append(name)
+
+    def visit(statements: list, bucket: list[str]) -> None:
+        for node in statements:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    note(alias.name.split(".")[0], bucket)
+            elif isinstance(node, ast.ImportFrom):
+                if node.level or not node.module:
+                    continue
+                note(node.module.split(".")[0], bucket)
+            elif isinstance(node, ast.Try):
+                # an import guarded by try/except is optional only when the
+                # handlers degrade gracefully; raise/sys.exit means it is fatal
+                fatal = any(_fatal(stmt) for handler in node.handlers for stmt in handler.body)
+                bucket_for_try = required if fatal else optional
+                visit(node.body, bucket_for_try)
+                visit(node.orelse, bucket_for_try)
+                visit(node.finalbody, bucket_for_try)
+                for handler in node.handlers:
+                    visit(handler.body, optional)
+            elif isinstance(node, ast.If):
+                visit(node.body, bucket)
+                visit(node.orelse, bucket)
+
+    visit(tree.body, required)
+    return required, [name for name in optional if name not in required]
+
+
+def _missing(tool: str) -> list[str]:
+    absent: list[str] = []
+    for name in _third_party(tool)[0]:
+        try:
+            if importlib.util.find_spec(name) is None:
+                absent.append(name)
+        except (ImportError, ValueError):
+            absent.append(name)
+    return absent
+
+
+def _optional(tool: str) -> list[str]:
+    absent: list[str] = []
+    for name in _third_party(tool)[1]:
+        try:
+            if importlib.util.find_spec(name) is None:
+                absent.append(name)
+        except (ImportError, ValueError):
+            absent.append(name)
+    return absent
+
+
+def _cmd_list() -> int:
+    width = max(len(name) for name in TOOLS)
+    print(f"{FOLDER}: {len(TOOLS)} tool(s)\n")
+    for name, info in TOOLS.items():
+        print(f"  {name.ljust(width)}  {info['summary']}")
+        print(f"  {' ' * width}  from {info['source']} ({info['lines']} lines)")
+    return 0
+
+
+def _cmd_doctor() -> int:
+    problems = 0
+    for name in TOOLS:
+        absent = _missing(name)
+        extras = _optional(name)
+        if absent:
+            problems += 1
+            wanted = ", ".join(dict.fromkeys(_pip_name(item) for item in absent))
+            print(f"  MISSING  {name}: {wanted}")
+        elif extras:
+            wanted = ", ".join(dict.fromkeys(_pip_name(item) for item in extras))
+            print(f"  ok       {name} (optional extras absent: {wanted})")
+        else:
+            print(f"  ok       {name}")
+    if problems:
+        print(f"\n{problems} tool(s) have unmet dependencies (names above are pip package names).")
+        return 1
+    print("\nAll tools are ready.")
+    return 0
+
+
+def _cmd_unpack(rest: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog=f"{FOLDER}.py unpack",
+                                     description="Write an embedded tool's original source back out.")
+    parser.add_argument("tool", choices=list(TOOLS))
+    parser.add_argument("-o", "--output", default=".", help="Directory to write into (default: .).")
+    parser.add_argument("--stdout", action="store_true", help="Print to stdout instead of writing a file.")
+    parser.add_argument("-f", "--force", action="store_true", help="Overwrite an existing file.")
+    args = parser.parse_args(rest)
+    text = _SOURCES[args.tool]
+    if args.stdout:
+        sys.stdout.write(text)
+        return 0
+    target = Path(args.output) / str(TOOLS[args.tool]["source"])
+    if target.exists() and not args.force:
+        print(f"refusing to overwrite {target} (use --force)", file=sys.stderr)
+        return 1
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(text)
+    print(f"wrote {target}")
+    return 0
+
+
+def _usage() -> str:
+    lines = [f"usage: python {FOLDER}.py <command> [args...]", "", "commands:"]
+    lines.append("  list                     list the embedded tools")
+    lines.append("  doctor                   report missing third-party packages")
+    lines.append("  unpack <tool> [-o DIR]   write a tool's original source back out")
+    for name, info in TOOLS.items():
+        lines.append(f"  {name:<24} {info['summary']}")
+    lines.append("")
+    lines.append("run '<command> --help' for a tool's own options")
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if not args or args[0] in {"-h", "--help", "help"}:
+        print(_usage())
+        return 0
+    command = args[0]
+    rest = args[1:]
+    if command == "list":
+        return _cmd_list()
+    if command == "doctor":
+        return _cmd_doctor()
+    if command in {"unpack", "source"}:
+        return _cmd_unpack(rest)
+    if command in TOOLS:
+        return run(command, rest)
+    close = difflib.get_close_matches(command, list(TOOLS) + ["list", "doctor", "unpack"], n=1)
+    hint = f" (did you mean {close[0]!r}?)" if close else ""
+    print(f"{FOLDER}.py: unknown command {command!r}{hint}", file=sys.stderr)
+    print(_usage(), file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":
