@@ -33,7 +33,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -67,7 +66,6 @@ def _decode(*chunks: str) -> str:
 
 
 _SOURCES['strip'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import hashlib
@@ -600,7 +598,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['pystrip'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import ast
@@ -902,7 +899,6 @@ Fixes applied while merging:
   actually support instead of silently falling back to tree-sitter.
 """
 
-from __future__ import annotations
 
 import argparse
 import difflib

@@ -19,7 +19,6 @@ and is used as a PYTHONPATH entry:
 Exit codes: 0 written · 1 the stub could not be imported (missing tree-sitter) · 2 bad usage
 """
 
-from __future__ import annotations
 
 import argparse
 import shutil

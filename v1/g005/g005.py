@@ -54,7 +54,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -103,7 +102,6 @@ _SOURCES['extract'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import bz2
@@ -993,7 +991,6 @@ _SOURCES['convert'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import bz2
@@ -1953,7 +1950,6 @@ _SOURCES['dirs'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import multiprocessing as mp
@@ -2105,7 +2101,6 @@ _SOURCES['7z'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import logging
@@ -4070,7 +4065,6 @@ if __name__ == "__main__":
 '''
 
 _SOURCES['zstd'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import io
@@ -4920,7 +4914,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['xz'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import contextlib
@@ -6122,7 +6115,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['lz4'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import contextlib
@@ -6466,7 +6458,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['gzbz'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import bz2
@@ -7109,7 +7100,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['text'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import bz2
@@ -7729,7 +7719,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['subdirs'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import bz2
@@ -8329,7 +8318,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['bench'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import bz2
 import gzip
@@ -8655,7 +8643,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['sniff'] = r'''#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import bz2
 import contextlib

@@ -30,7 +30,6 @@ the *quality* of near-duplicate detection changes.
 Exit codes: 0 success · 1 with --fail-on-dupes/--fail-on-error · 2 usage · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

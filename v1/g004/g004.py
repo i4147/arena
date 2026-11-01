@@ -26,7 +26,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -84,7 +83,6 @@ Usage:
     python g004.py extract --kind constants -o out
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

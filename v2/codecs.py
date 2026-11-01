@@ -33,7 +33,6 @@ container that stores independent blocks; the frame records the codec name, so
 Exit codes: 0 ok · 1 errors · 2 usage · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import bz2

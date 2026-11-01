@@ -26,7 +26,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -58,7 +57,6 @@ def _decode(*chunks: str) -> str:
 
 
 _SOURCES['pydup'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import ast

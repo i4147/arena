@@ -15,7 +15,6 @@ result still compiles *and* the target name is not referenced anywhere in scope.
 Exit codes: 0 ok · 1 findings (with --check) or errors · 2 usage
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

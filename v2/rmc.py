@@ -20,7 +20,6 @@ fails the gate is left untouched and reported as ``rejected``.
 Exit codes: 0 ok · 1 errors or --check found work · 2 usage · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

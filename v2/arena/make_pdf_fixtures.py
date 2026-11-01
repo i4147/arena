@@ -22,7 +22,6 @@ opens it to report the page count (which is the point of that exemption).
 Exit codes: 0 written · 1 PyMuPDF missing / write failed · 2 bad usage
 """
 
-from __future__ import annotations
 
 import argparse
 import math

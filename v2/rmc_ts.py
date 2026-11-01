@@ -26,7 +26,6 @@ What it will not do: annotations, libcst, regex, unparse.  That is `rmc.py`.
 Exit codes: 0 ok · 1 errors / --check found work · 2 usage or dh missing · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

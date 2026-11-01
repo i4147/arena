@@ -24,7 +24,6 @@ To use it, make it importable under the name `dh` (never import it from the repo
 older/newer signature variants that `rmc_ts.py`'s kwarg filter is there to absorb.
 """
 
-from __future__ import annotations
 
 import ast
 import io

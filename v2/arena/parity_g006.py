@@ -18,7 +18,6 @@ Exit codes: 0 identical everywhere · 1 a difference (or an unexpected backend
 failure) · 2 bad usage / libcst not installed
 """
 
-from __future__ import annotations
 
 import argparse
 import shutil

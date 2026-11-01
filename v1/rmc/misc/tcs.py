@@ -13,7 +13,6 @@ name-mangling is not safe to run over a package by accident.
 Usage: python tcs.py [-m] [-x] FILE...
 """
 
-from __future__ import annotations
 
 import ast
 import builtins

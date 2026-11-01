@@ -26,7 +26,6 @@ type-annotation tool must never do is quietly change your code.
 Exit codes: 0 ok · 1 errors / --check found work · 2 usage · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import ast

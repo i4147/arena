@@ -37,7 +37,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -73,7 +72,6 @@ def _decode(*chunks: str) -> str:
 
 
 _SOURCES['text'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import sys
@@ -514,7 +512,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['pages'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import contextlib
@@ -1225,7 +1222,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['resources'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import os
@@ -1511,7 +1507,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['view'] = r"""#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import math
@@ -1830,7 +1825,6 @@ if __name__ == "__main__":
 """
 
 _SOURCES['img'] = r'''#!/data/data/com.termux/files/usr/bin/env python
-from __future__ import annotations
 
 import argparse
 import shutil

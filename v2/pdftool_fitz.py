@@ -28,7 +28,6 @@ Guard rails are the same as pdftool.py: a PDF over 100 MiB (or more pages than
 Exit codes: 0 ok · 1 errors · 2 usage or PyMuPDF missing · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import json

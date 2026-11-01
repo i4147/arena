@@ -37,7 +37,6 @@ Limits:       --max-size 100M (K/M/G, 0 or --no-max-size = off) · --max-pages N
 Exit codes: 0 ok · 1 errors · 2 usage · 130 interrupted
 """
 
-from __future__ import annotations
 
 import argparse
 import fnmatch

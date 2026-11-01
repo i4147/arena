@@ -31,7 +31,6 @@ Requires Python 3.10+.  Individual tools need their own third-party packages;
 run ``doctor`` to see which are missing.
 """
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -69,7 +68,6 @@ _SOURCES['hints'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -432,7 +430,6 @@ _SOURCES['annotate'] = r'''#!/data/data/com.termux/files/usr/bin/env python
 
 ---"""
 
-from __future__ import annotations
 
 import argparse
 import ast
@@ -1080,7 +1077,6 @@ Fixed during consolidation:
     with no way to preview the change).
 """
 
-from __future__ import annotations
 
 import argparse
 import contextlib
